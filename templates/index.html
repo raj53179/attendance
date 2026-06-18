@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes subtle-float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.02); } }
+        .animate-float { animation: subtle-float 6s infinite ease-in-out; }
+        .dashboard-glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.4); }
+        .glass-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.75); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-rose-200 to-orange-100 text-slate-800 font-sans min-h-screen relative overflow-x-hidden flex flex-col">
+
+    <nav id="mainNav" class="bg-white/60 backdrop-blur-md text-slate-800 border-b border-white/40 px-6 py-4 flex justify-between items-center hidden transition-all duration-300 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+            <h1 class="text-xl font-black tracking-wider text-slate-900">ATTENDANCE MANAGEMENT SYSTEM</h1>
+        </div>
+        <div class="text-sm font-medium flex items-center gap-4">
+            <span id="userProfileBadge" class="bg-red-500/10 text-red-700 border border-red-500/20 font-bold px-4 py-1.5 rounded-full shadow-inner"></span>
+            <button onclick="logout()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-1.5 rounded-full font-bold transition active:scale-95 shadow-sm">Logout</button>
+        </div>
+    </nav>
+
+    <div class="flex-grow flex items-center justify-center p-4 md:p-8 z-10">
+        
+        <div id="loginSection" class="max-w-4xl w-full bg-white/90 rounded-[2.5rem] shadow-2xl border border-white overflow-hidden grid md:grid-cols-2 min-h-[500px]">
+            <div class="p-8 md:p-12 bg-gradient-to-br from-rose-50 via-pink-100/60 to-orange-50 flex flex-col justify-between relative">
+                <div class="space-y-3 z-10">
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight leading-tight">Sign In to <br><span class="bg-gradient-to-r from-red-500 to-rose-600 bg-clip-text text-transparent">Web Attendance <br>Management Matrix</span></h2>
+                    <p class="text-slate-500 text-sm font-medium">Real-time academic metrics hierarchy hub.</p>
+                </div>
+                <div class="my-6 flex justify-center items-center z-10 animate-float">
+                    <div class="w-56 h-56 bg-gradient-to-tr from-red-400 to-rose-500 rounded-3xl shadow-xl flex items-center justify-center text-white font-bold text-6xl">📅</div>
+                </div>
+                <p class="text-slate-400 font-semibold uppercase tracking-wider z-10" style="font-size: 11px;">Institutional 4-Tier Security Matrix</p>
+            </div>
+
+            <div class="p-8 md:p-12 flex flex-col justify-center bg-white space-y-6">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Select Your System Role</label>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
+                            <input type="radio" name="roleRadio" value="student" checked onchange="updateFormInterface()" class="hidden">👤 <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Student</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
+                            <input type="radio" name="roleRadio" value="teacher" onchange="updateFormInterface()" class="hidden">👩‍🏫 <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Teacher</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
+                            <input type="radio" name="roleRadio" value="coordinator" onchange="updateFormInterface()" class="hidden">📋 <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Coord</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
+                            <input type="radio" name="roleRadio" value="admin" onchange="updateFormInterface()" class="hidden">🛡️ <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Admin</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <input type="text" id="username" placeholder="Enter Enrollment Number" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20">
+                    <input type="password" id="password" placeholder="Enter Password" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20">
+                </div>
+                <button onclick="loginProcessing()" class="w-full bg-red-500 hover:bg-red-600 text-white font-extrabold py-3.5 rounded-xl text-sm shadow-md transition">Log in / Sign In</button>
+            </div>
+        </div>
+
+        <div id="adminPanel" class="hidden w-full max-w-6xl space-y-8 animate-fade-in">
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl"><h2 class="text-2xl font-black text-slate-900">Root System Controller Workspace</h2></div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="dashboard-glass p-6 rounded-3xl shadow-xl space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-red-600 border-b pb-2">Provision Coordinator Account</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="coordUsername" placeholder="Enter Coordinator Unique Key ID" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
+                        <input type="text" id="coordName" placeholder="Coordinator Identity Full Name" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
+                        <input type="password" id="coordPassword" placeholder="Access Authentication Security Key" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
+                        <button onclick="addCoordinator()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition">Deploy Department Coordinator</button>
+                    </div>
+                </div>
+                <div class="dashboard-glass p-6 rounded-3xl shadow-xl max-h-80 overflow-y-auto">
+                    <h3 class="text-slate-400 mb-4 border-b pb-2 uppercase tracking-widest font-bold text-xs">Active Coordinators</h3>
+                    <table class="w-full text-left border-collapse text-xs font-semibold"><tbody id="adminCoordinatorTable"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <div id="coordinatorPanel" class="hidden w-full max-w-6xl space-y-6 animate-fade-in">
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">Department Coordinator Control Console</h2>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mt-0.5">Academic Operations Control Center</p>
+                </div>
+                <div class="bg-white/60 border border-white p-2 rounded-xl flex items-center gap-3">
+                    <span class="font-bold uppercase tracking-wider text-slate-600 text-xs pl-2">Gate Limit (%):</span>
+                    <input type="number" id="minCriteriaInput" class="w-16 p-2 text-center border rounded-lg font-black text-red-600 text-sm focus:outline-none">
+                    <button onclick="updateCriteria()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition">Apply</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="switchCoordinatorTab('accountsTab')" id="btn-accountsTab" class="p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-red-500 bg-red-50 text-red-700">👥 Accounts Registry</button>
+                <button onclick="switchCoordinatorTab('subjectsTab')" id="btn-subjectsTab" class="p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-slate-200 bg-white text-slate-600">📚 Subject Management</button>
+                <button onclick="switchCoordinatorTab('timetableTab')" id="btn-timetableTab" class="p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-slate-200 bg-white text-slate-600">⏱️ Timetable Schedules</button>
+                <button onclick="switchCoordinatorTab('reportsTab')" id="btn-reportsTab" class="p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-slate-200 bg-white text-slate-600">📊 Student Records & Reports</button>
+            </div>
+
+            <div id="tabContent-accountsTab" class="coordinator-tab-content space-y-6">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="dashboard-glass p-5 rounded-3xl shadow-xl space-y-3">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-red-600 border-b pb-1.5">Profile Creation</h3>
+                        <select id="regRole" onchange="toggleRegPlaceholder()" class="w-full border p-2.5 rounded-xl bg-white text-xs font-bold focus:outline-none">
+                            <option value="student">Student Account Profile</option>
+                            <option value="teacher">Faculty Teacher Profile</option>
+                        </select>
+                        <input type="text" id="regUsername" placeholder="Enter Enrollment Number" class="w-full border p-2.5 text-xs rounded-xl bg-white focus:outline-none">
+                        <input type="text" id="regName" placeholder="Full Account Identity Name" class="w-full border p-2.5 text-xs rounded-xl bg-white focus:outline-none">
+                        <input type="password" id="regPassword" placeholder="Access Password String" class="w-full border p-2.5 text-xs rounded-xl bg-white focus:outline-none">
+                        <input type="text" id="regSection" placeholder="Class Section Code (e.g. CS-A)" class="w-full border p-2.5 text-xs rounded-xl bg-white uppercase font-bold focus:outline-none">
+                        <button onclick="addProvisionedUser()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold transition">Inject Profile Node</button>
+                    </div>
+                    <div class="dashboard-glass p-4 rounded-3xl shadow-xl max-h-[340px] overflow-y-auto">
+                        <h3 class="text-slate-400 mb-2 border-b pb-1 uppercase font-bold text-[10px]">Active Instructor Base</h3>
+                        <table class="w-full text-left text-xs font-semibold"><tbody id="coordTeacherTable"></tbody></table>
+                    </div>
+                    <div class="dashboard-glass p-4 rounded-3xl shadow-xl max-h-[340px] overflow-y-auto">
+                        <h3 class="text-slate-400 mb-2 border-b pb-1 uppercase font-bold text-[10px]">Active Enrolled Students</h3>
+                        <table class="w-full text-left text-xs font-semibold"><tbody id="coordStudentTable"></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tabContent-subjectsTab" class="coordinator-tab-content space-y-6 hidden">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="dashboard-glass p-5 rounded-3xl shadow-xl space-y-3">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-red-600 border-b pb-1.5">Add New Subject Stream</h3>
+                        <input type="text" id="subCode" placeholder="Subject Code (e.g., CS-501)" class="w-full border p-2.5 text-xs rounded-xl uppercase font-bold bg-white focus:outline-none">
+                        <input type="text" id="subName" placeholder="Subject Name" class="w-full border p-2.5 text-xs rounded-xl bg-white focus:outline-none">
+                        <input type="text" id="subTeacherId" placeholder="Assigned Faculty Teacher ID" class="w-full border p-2.5 text-xs rounded-xl bg-white focus:outline-none">
+                        <button onclick="addSubject()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm">Map New Course</button>
+                    </div>
+                    <div class="dashboard-glass p-5 rounded-3xl shadow-xl md:col-span-2 overflow-x-auto">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 border-b pb-2 mb-4">View Institutional Courses Directory</h3>
+                        <table class="w-full text-left text-xs font-semibold border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 border-b"><th class="p-2">Subject Code</th><th class="p-2">Subject Description Name</th><th class="p-2">Assigned Instructor</th><th class="p-2 text-center">Action</th></tr>
+                            </thead>
+                            <tbody id="coordSubjectsRegistryTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tabContent-timetableTab" class="coordinator-tab-content space-y-6 hidden">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="dashboard-glass p-5 rounded-3xl shadow-xl space-y-3">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-red-600 border-b pb-1.5">Create Timetable Allocation</h3>
+                        <input type="text" id="schSubCode" placeholder="Subject Code (e.g., CS-501)" class="w-full border p-2.5 text-xs rounded-xl bg-white uppercase font-bold focus:outline-none">
+                        <select id="schDay" class="w-full border p-2.5 text-xs rounded-xl bg-white font-bold focus:outline-none">
+                            <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="time" id="schStart" value="09:00" class="w-full border p-2 rounded-xl bg-white text-xs font-bold focus:outline-none">
+                            <input type="time" id="schEnd" value="10:00" class="w-full border p-2 rounded-xl bg-white text-xs font-bold focus:outline-none">
+                        </div>
+                        <button onclick="commitScheduleMapping()" class="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm">Save Timetable Allocation</button>
+                    </div>
+                    <div class="dashboard-glass p-5 rounded-3xl shadow-xl md:col-span-2 overflow-x-auto">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 border-b pb-2 mb-4">View Master Timetable Matrix Layout</h3>
+                        <table class="w-full text-left text-xs font-semibold border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 border-b"><th class="p-2">Day Of Week</th><th class="p-2">Course Ref Code</th><th class="p-2">Subject Description</th><th class="p-2">Execution Slot</th><th class="p-2 text-center">Action</th></tr>
+                            </thead>
+                            <tbody id="coordTimetableRegistryTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tabContent-reportsTab" class="coordinator-tab-content space-y-6 hidden">
+                <div class="dashboard-glass p-6 rounded-3xl shadow-xl space-y-4">
+                    <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                        <div>
+                            <h3 class="text-sm font-black uppercase tracking-wider text-slate-600">Student-Wise Metrics Performance Index</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Aggregated baseline parameters profile</p>
+                        </div>
+                        <button onclick="exportTableToCSV('coordinatorStudentWiseReportTable', 'Student_Wise_Attendance_Summary.csv')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition shadow">
+                            📊 Export Summary Sheet to CSV / Excel
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="w-full text-left text-xs font-medium border-collapse" id="coordinatorStudentWiseReportTable">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 border-b sticky top-0 bg-white/95 z-10">
+                                    <th class="p-3">Enrollment No</th>
+                                    <th class="p-3">Student Identity Full Name</th>
+                                    <th class="p-3">Class Section</th>
+                                    <th class="p-3 text-center">Total Classes Run</th>
+                                    <th class="p-3 text-center">Classes Attended</th>
+                                    <th class="p-3 text-center">Overall Attendance %</th>
+                                    <th class="p-3 text-center">Basal Parameter Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coordinatorGlobalReportTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="teacherPanel" class="hidden w-full max-w-6xl space-y-6 animate-fade-in">
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl space-y-4">
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Faculty Logging Hub</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">1. Select Target Class Section</label>
+                        <select id="teacherClassSelect" onchange="loadSchedulesForSelectedClass()" class="border border-slate-200 w-full p-3 rounded-xl bg-white text-sm font-bold text-slate-700 focus:outline-none shadow-inner"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">2. Lecture Timing Slot (As Per Timetable)</label>
+                        <select id="teacherScheduleSelect" onchange="checkAndLoadPastAttendance()" class="border border-slate-200 w-full p-3 rounded-xl bg-white text-sm font-bold text-slate-700 focus:outline-none shadow-inner" disabled>
+                            <option value="">-- Choose Class Section First --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">3. Metric Log Date</label>
+                        <input type="date" id="attendanceDate" onchange="checkAndLoadPastAttendance()" class="border border-slate-200 w-full p-3 rounded-xl text-sm font-bold text-slate-700 bg-white focus:outline-none">
+                    </div>
+                </div>
+                <div id="teacherModeIndicatorBadge" class="p-3 rounded-xl font-bold text-xs border bg-blue-50 text-blue-700 border-blue-200 hidden"></div>
+            </div>
+
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl">
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-red-600">Roster Attendance Verification Sheet</h3>
+                    <button onclick="exportTableToCSV('teacherVerificationRosterTableLayout', 'Class_Roster_Marking_Sheet.csv')" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg transition shadow-sm">
+                        📊 Export Session List to CSV
+                    </button>
+                </div>
+                <table class="w-full text-left border-collapse mb-4" id="teacherVerificationRosterTableLayout">
+                    <thead><tr class="bg-slate-50 text-xs font-bold text-slate-600"><th class="p-4 border-b">Enrollment Number</th><th class="p-4 border-b">Identity Full Name</th><th class="p-4 border-b text-center">Status Toggle Metric</th></tr></thead>
+                    <tbody id="teacherRosterTable" class="text-sm font-medium"></tbody>
+                </table>
+                <button onclick="submitAttendanceBatch()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition">Commit Attendance Logs Matrix</button>
+            </div>
+        </div>
+
+        <div id="studentPanel" class="hidden w-full max-w-6xl space-y-8 animate-fade-in">
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl"><h2 class="text-2xl font-black text-slate-900 mb-2">Metrics Analysis Console</h2><div id="criteriaAlertContainer" class="p-4 rounded-xl font-semibold text-sm border bg-white/40"></div></div>
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl">
+                <h3 class="text-sm font-bold uppercase text-slate-400 mb-4 tracking-widest">Vector Subject Profiles & Dynamic Deficit Computations</h3>
+                <div id="studentMetricsGrid" class="grid sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+            </div>
+            <div class="dashboard-glass p-6 rounded-3xl shadow-xl"><h3 class="text-sm font-bold uppercase text-slate-400 mb-4 tracking-widest">Complete Chronological History Trace</h3><table class="w-full text-left border-collapse text-sm font-medium"><tbody id="studentHistoryTable"></tbody></table></div>
+        </div>
+
+    </div>
+
+    <div id="editModal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
+            <h3 class="text-lg font-black tracking-tight border-b pb-2">Edit User Profile Context</h3>
+            <input type="hidden" id="editUserId">
+            <input type="text" id="editUserNameInput" placeholder="Edit Display Name" class="w-full border p-2.5 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20">
+            <input type="password" id="editUserPasswordInput" placeholder="Reset Password String" class="w-full border p-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500/20">
+            <div class="flex gap-2 justify-end"><button onclick="closeEditModal()" class="text-slate-500 px-4 py-2 font-bold text-xs hover:bg-slate-100 rounded-xl">Cancel</button><button onclick="submitUserEdits()" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold text-xs transition active:scale-95">Save Changes</button></div>
+        </div>
+    </div>
+
+    <script>
+        // CHANGE THIS VALUE TO INTERACT WITH EXTERNAL PRODUCTION ENDPOINTS OR LOCAL IP ROADS
+        const HOST = "https://attendance-management-system-1.onrender.com";
+        let activeSessionUser = null;
+
+        function updateFormInterface() {
+            const r = document.querySelector('input[name="roleRadio"]:checked').value;
+            document.getElementById('username').placeholder = r === 'student' ? "Enter Enrollment Number" : (r === 'teacher' ? "Enter Teacher ID" : (r === 'coordinator' ? "Enter Coordinator Code" : "Enter Admin Handle"));
+        }
+        function toggleRegPlaceholder() {
+            const r = document.getElementById('regRole').value;
+            document.getElementById('regUsername').placeholder = r === 'student' ? 'Enter Enrollment Number' : 'Enter Teacher ID';
+            document.getElementById('regSection').style.display = r === 'student' ? 'block' : 'none';
+        }
+
+        function switchCoordinatorTab(tabId) {
+            document.querySelectorAll('.coordinator-tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+                btn.className = "p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-slate-200 bg-white text-slate-600";
+            });
+            document.getElementById(`btn-${tabId}`).className = "p-3.5 rounded-2xl border-2 font-black text-xs uppercase tracking-wider transition-all text-center border-red-500 bg-red-50 text-red-700";
+        }
+
+        function showModuleView(viewName) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('coordinatorPanel').classList.add('hidden');
+            document.getElementById('teacherPanel').classList.add('hidden');
+            document.getElementById('studentPanel').classList.add('hidden');
+            document.getElementById('mainNav').classList.remove('hidden');
+            document.getElementById(`${viewName}Panel`).classList.remove('hidden');
+        }
+
+        function logout() {
+            activeSessionUser = null;
+            document.getElementById('mainNav').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('coordinatorPanel').classList.add('hidden');
+            document.getElementById('teacherPanel').classList.add('hidden');
+            document.getElementById('studentPanel').classList.add('hidden');
+        }
+
+        async function loginProcessing() {
+            try {
+                const res = await fetch(`${HOST}/api/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
+                });
+                if(!res.ok) throw new Error();
+                activeSessionUser = await res.json();
+                
+                if (activeSessionUser.role !== document.querySelector('input[name="roleRadio"]:checked').value) {
+                    alert(`Role privilege allocation bounce.`); logout(); return;
+                }
+                document.getElementById('userProfileBadge').innerText = `${activeSessionUser.name} [${activeSessionUser.username}]`;
+                showModuleView(activeSessionUser.role);
+                
+                if(activeSessionUser.role === 'admin') loadAdminViewData();
+                if(activeSessionUser.role === 'coordinator') loadCoordinatorViewData();
+                if(activeSessionUser.role === 'teacher') loadTeacherViewData();
+                if(activeSessionUser.role === 'student') loadStudentViewData();
+            } catch { alert('Authentication credentials rejected.'); }
+        }
+
+        // --- ROOT SYSTEM ADMIN HANDLERS ---
+        async function loadAdminViewData() {
+            const res = await fetch(`${HOST}/api/admin/coordinators`);
+            const coordinators = await res.json();
+            const tbody = document.getElementById('adminCoordinatorTable'); tbody.innerHTML = '';
+            coordinators.forEach(c => { tbody.insertAdjacentHTML('beforeend', `<tr class="border-b"><td class="p-2 font-mono font-bold text-slate-500">${c.username}</td><td>${c.name}</td></tr>`); });
+        }
+        async function addCoordinator() {
+            await fetch(`${HOST}/api/admin/coordinators`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('coordUsername').value.trim(), name: document.getElementById('coordName').value, password: document.getElementById('coordPassword').value, admin_id: activeSessionUser.id}) });
+            document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; loadAdminViewData();
+        }
+
+        // --- COORDINATOR CONTROL LAYER METHODS ---
+        async function loadCoordinatorViewData() {
+            const resCrit = await fetch(`${HOST}/api/admin/criteria`);
+            const minCriteria = (await resCrit.json()).min_attendance;
+            document.getElementById('minCriteriaInput').value = minCriteria;
+
+            const resUsers = await fetch(`${HOST}/api/coordinator/users?coordinator_id=${activeSessionUser.id}`);
+            const users = await resUsers.json();
+            
+            const teacherTable = document.getElementById('coordTeacherTable');
+            const studentTable = document.getElementById('coordStudentTable');
+            teacherTable.innerHTML = ''; studentTable.innerHTML = '';
+
+            users.forEach(u => {
+                const actionControls = `
+                    <td class="p-2 text-right space-x-1">
+                        <button onclick="openEditModal(${u.id}, '${u.name}')" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border text-[10px] font-bold">Edit</button>
+                        <button onclick="deleteUser(${u.id})" class="text-red-600 bg-red-50 px-2 py-0.5 rounded border text-[10px] font-bold">Remove</button>
+                    </td>`;
+
+                if(u.role === 'teacher') {
+                    teacherTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold text-indigo-700">${u.username}</td><td class="p-2 font-medium">${u.name}</td>${actionControls}</tr>`);
+                } else {
+                    studentTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold">${u.username}</td><td class="p-2 font-medium">${u.name} <span class="text-[10px] text-slate-400 font-mono">[${u.section_name || 'N/A'}]</span></td>${actionControls}</tr>`);
+                }
+            });
+
+            loadSubjectsRegistryView();
+            loadTimetableRegistryView();
+            loadCoordinatorGlobalReports(minCriteria);
+        }
+
+        async function loadSubjectsRegistryView() {
+            const res = await fetch(`${HOST}/api/coordinator/subjects`);
+            const subjects = await res.json();
+            const tbody = document.getElementById('coordSubjectsRegistryTable'); tbody.innerHTML = '';
+            subjects.forEach(s => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b text-slate-700 hover:bg-white/30 transition">
+                        <td class="p-2.5 font-mono font-bold text-indigo-700">[${s.subject_code}]</td>
+                        <td class="p-2.5 font-medium">${s.subject_name}</td>
+                        <td class="p-2.5 font-semibold text-slate-500">${s.teacher_name ? `${s.teacher_name} (${s.teacher_uid})` : '⚠️ Unassigned'}</td>
+                        <td class="p-2.5 text-center"><button onclick="removeSubjectNode(${s.id})" class="text-red-600 bg-rose-50 border border-red-200 px-2 py-0.5 rounded text-xs font-black">Remove</button></td>
+                    </tr>`);
+            });
+            if(!subjects.length) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No courses added into database view directory yet.</td></tr>';
+        }
+        async function removeSubjectNode(id) {
+            if(confirm("Confirm security parameter execution: Delete subject instance?")) {
+                await fetch(`${HOST}/api/coordinator/subjects/${id}`, { method: 'DELETE' }); loadSubjectsRegistryView();
+            }
+        }
+
+        async function addSubject() {
+            const res = await fetch(`${HOST}/api/coordinator/subjects`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({subject_code: document.getElementById('subCode').value, subject_name: document.getElementById('subName').value, teacher_id: document.getElementById('subTeacherId').value}) });
+            if(res.ok) { document.getElementById('subCode').value = ''; document.getElementById('subName').value = ''; document.getElementById('subTeacherId').value = ''; loadSubjectsRegistryView(); } else { alert((await res.json()).error); }
+        }
+
+        async function loadTimetableRegistryView() {
+            const res = await fetch(`${HOST}/api/coordinator/schedules`);
+            const schedules = await res.json();
+            const tbody = document.getElementById('coordTimetableRegistryTable'); tbody.innerHTML = '';
+            schedules.forEach(s => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b text-slate-700 hover:bg-white/30 transition">
+                        <td class="p-2.5 font-bold text-indigo-900">${s.day_of_week}</td>
+                        <td class="p-2.5 font-mono font-black text-indigo-600">[${s.subject_code}]</td>
+                        <td class="p-2.5 font-medium">${s.subject_name} <span class="text-xs text-indigo-500 font-mono font-bold">[${s.section_name || 'N/A'}]</span></td>
+                        <td class="p-2.5 font-mono font-bold text-slate-600">${s.start_time} - ${s.end_time}</td>
+                        <td class="p-2.5 text-center"><button onclick="removeScheduleSlot(${s.id})" class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-xl">Delete</button></td>
+                    </tr>`);
+            });
+            if(!schedules.length) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No schedules mapped into master registry matrix.</td></tr>';
+        }
+        async function commitScheduleMapping() {
+            const res = await fetch(`${HOST}/api/coordinator/schedules`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({subject_code: document.getElementById('schSubCode').value, day_of_week: document.getElementById('schDay').value, start_time: document.getElementById('schStart').value, end_time: document.getElementById('schEnd').value}) });
+            if(res.ok) { document.getElementById('schSubCode').value = ''; loadTimetableRegistryView(); } else { alert((await res.json()).error); }
+        }
+        async function removeScheduleSlot(schId) {
+            if(confirm("Confirm permanently dropping this lecture slot?")) {
+                await fetch(`${HOST}/api/coordinator/schedules/${schId}`, { method: 'DELETE' }); loadTimetableRegistryView();
+            }
+        }
+
+        async function loadCoordinatorGlobalReports(minCriteria) {
+            const res = await fetch(`${HOST}/api/coordinator/attendance-report?coordinator_id=${activeSessionUser.id}`);
+            const report = await res.json();
+            const tbody = document.getElementById('coordinatorGlobalReportTbody'); 
+            tbody.innerHTML = '';
+            
+            report.forEach(r => {
+                const labelTheme = r.attendance_percentage >= minCriteria ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse';
+                const statusText = r.attendance_percentage >= minCriteria ? 'Safe ✅' : 'Deficit ⚠️';
+                
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b hover:bg-slate-50 transition text-slate-700">
+                        <td class="p-3 font-mono font-bold text-indigo-900">${r.enrollment_no}</td>
+                        <td class="p-3 font-semibold text-slate-800">${r.student_name}</td>
+                        <td class="p-3 font-mono text-slate-400 font-bold">${r.section_name || 'N/A'}</td>
+                        <td class="p-3 text-center font-mono text-slate-500 font-bold">${r.total_lectures}</td>
+                        <td class="p-3 text-center font-mono text-slate-500 font-bold">${r.attended_lectures}</td>
+                        <td class="p-3 text-center font-mono"><span class="px-2 py-0.5 rounded text-[11px] border font-black ${labelTheme}">${r.attendance_percentage}%</span></td>
+                        <td class="p-3 text-center font-bold text-[10px] uppercase tracking-wider">${statusText}</td>
+                    </tr>`);
+            });
+            if(!report.length) tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 italic">No student tracking logs compiled yet.</td></tr>';
+        }
+
+        function openEditModal(id, name) { document.getElementById('editUserId').value = id; document.getElementById('editUserNameInput').value = name; document.getElementById('editUserPasswordInput').value = ''; document.getElementById('editModal').classList.remove('hidden'); }
+        function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+        async function submitUserEdits() {
+            await fetch(`${HOST}/api/admin/users/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: document.getElementById('editUserId').value, name: document.getElementById('editUserNameInput').value, password: document.getElementById('editUserPasswordInput').value}) });
+            closeEditModal(); loadCoordinatorViewData();
+        }
+        async function addProvisionedUser() {
+            await fetch(`${HOST}/api/coordinator/users`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('regUsername').value, password: document.getElementById('regPassword').value, name: document.getElementById('regName').value, role: document.getElementById('regRole').value, section_name: document.getElementById('regSection').value, coordinator_id: activeSessionUser.id}) });
+            document.getElementById('regUsername').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regSection').value = ''; loadCoordinatorViewData();
+        }
+        async function deleteUser(id) { if(confirm("Archive this profile timeline record?")) { await fetch(`${HOST}/api/admin/users/${id}`, { method: 'DELETE' }); loadCoordinatorViewData(); } }
+        async function updateCriteria() { await fetch(`${HOST}/api/admin/criteria`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({min_attendance: document.getElementById('minCriteriaInput').value}) }); loadCoordinatorViewData(); }
+
+        let teacherLoadedSchedulesCache = [];
+        async function loadTeacherViewData() {
+            document.getElementById('attendanceDate').valueAsDate = new Date();
+            const res = await fetch(`${HOST}/api/teacher/classes/${activeSessionUser.id}`);
+            const classes = await res.json();
+            const classSelect = document.getElementById('teacherClassSelect');
+            
+            classSelect.innerHTML = '<option value="">-- Choose Class Section --</option>';
+            classes.forEach(c => { classSelect.insertAdjacentHTML('beforeend', `<option value="${c.section_id}">${c.section_name}</option>`); });
+            
+            document.getElementById('teacherScheduleSelect').innerHTML = '<option value="">-- Choose Class Section First --</option>';
+            document.getElementById('teacherScheduleSelect').disabled = true;
+            document.getElementById('teacherRosterTable').innerHTML = '';
+            document.getElementById('teacherModeIndicatorBadge').classList.add('hidden');
+        }
+
+        async function loadSchedulesForSelectedClass() {
+            const sectionId = document.getElementById('teacherClassSelect').value;
+            const schSelect = document.getElementById('teacherScheduleSelect');
+            if(!sectionId) { schSelect.innerHTML = '<option value="">-- Choose Class Section First --</option>'; schSelect.disabled = true; return; }
+
+            const res = await fetch(`${HOST}/api/teacher/schedules-by-class?teacher_id=${activeSessionUser.id}&section_id=${sectionId}`);
+            teacherLoadedSchedulesCache = await res.json();
+            
+            schSelect.innerHTML = '<option value="">-- Select Scheduled Slot --</option>';
+            teacherLoadedSchedulesCache.forEach(s => {
+                schSelect.insertAdjacentHTML('beforeend', `<option value="${s.schedule_id}">${s.day_of_week} | [${s.subject_code}] ${s.subject_name} (${s.start_time} - ${s.end_time})</option>`);
+            });
+            schSelect.disabled = false;
+        }
+
+        async function checkAndLoadPastAttendance() {
+            const sectionId = document.getElementById('teacherClassSelect').value;
+            const schId = document.getElementById('teacherScheduleSelect').value;
+            const date = document.getElementById('attendanceDate').value;
+            if(!sectionId || !schId || !date) return;
+
+            const slot = teacherLoadedSchedulesCache.find(s => s.schedule_id == schId);
+            
+            const resPast = await fetch(`${HOST}/api/teacher/fetch-past-attendance?subject_id=${slot.subject_id}&date=${date}&start_time=${slot.start_time}`);
+            const pastRecords = await resPast.json();
+
+            const resRoster = await fetch(`${HOST}/api/teacher/students-by-section/${sectionId}`);
+            const students = await resRoster.json();
+            
+            const tbody = document.getElementById('teacherRosterTable'); tbody.innerHTML = '';
+            const indicator = document.getElementById('teacherModeIndicatorBadge');
+
+            if(pastRecords.length > 0) {
+                indicator.className = "p-3 rounded-xl font-bold text-xs border bg-amber-50 text-amber-700 border-amber-200 block";
+                indicator.innerText = `✏️ UPDATE MODE ACTIVE: Found existing records for this date/timing slot. Modifying values will overwrite past logs.`;
+            } else {
+                indicator.className = "p-3 rounded-xl font-bold text-xs border bg-emerald-50 text-emerald-700 border-emerald-200 block";
+                indicator.innerText = `🟢 NEW ENTRY MODE: No past records found for this slot. Creating clean transaction records.`;
+            }
+            indicator.classList.remove('hidden');
+
+            students.forEach(s => {
+                const pastLog = pastRecords.find(r => r.student_id == s.id);
+                const pSel = (pastLog && pastLog.status === 'Present') ? 'selected' : '';
+                const aSel = (pastLog && pastLog.status === 'Absent') ? 'selected' : '';
+
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b hover:bg-white/30 transition" data-sid="${s.id}">
+                        <td class="p-4 font-mono font-bold text-slate-600">${s.enrollment_no}</td>
+                        <td class="p-4 font-semibold">${s.name}</td>
+                        <td class="p-4 text-center">
+                            <select class="status-select border rounded-xl px-4 py-1.5 font-bold text-xs bg-white focus:outline-none">
+                                <option value="Present" ${pSel}>Present 🟢</option>
+                                <option value="Absent" ${aSel}>Absent 🔴</option>
+                            </select>
+                        </td>
+                    </tr>`);
+            });
+        }
+
+        async function submitAttendanceBatch() {
+            const schId = document.getElementById('teacherScheduleSelect').value;
+            const slot = teacherLoadedSchedulesCache.find(s => s.schedule_id == schId);
+            if(!slot) return alert('Select scheduled operational time block.');
+
+            const records = [];
+            document.querySelectorAll('#teacherRosterTable tr').forEach(row => {
+                records.push({ student_id: parseInt(row.getAttribute('data-sid')), status: row.querySelector('.status-select').value });
+            });
+
+            await fetch(`${HOST}/api/teacher/attendance`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({subject_id: slot.subject_id, date: document.getElementById('attendanceDate').value, start_time: slot.start_time, end_time: slot.end_time, records})
+            });
+            alert('Attendance batch successfully saved.'); checkAndLoadPastAttendance();
+        }
+
+        async function loadStudentViewData() {
+            const res = await fetch(`${HOST}/api/student/dashboard/${activeSessionUser.id}`);
+            const data = await res.json();
+            const alertBox = document.getElementById('criteriaAlertContainer');
+            
+            let warningFound = data.subject_wise.some(s => s.status === 'Warning');
+            if(warningFound) {
+                alertBox.className = "p-4 rounded-xl font-bold text-sm bg-red-500/10 text-red-700 border border-red-200/30 shadow-inner";
+                alertBox.innerHTML = `⚠️ Boundary shortfalls detected below ${data.min_attendance_required}%. Adjust your metrics profile.`;
+            } else {
+                alertBox.className = "p-4 rounded-xl font-bold text-sm bg-emerald-500/10 text-emerald-700 border border-emerald-200/30 shadow-inner";
+                alertBox.innerHTML = `✅ All monitoring tracking paths operating nominal (>${data.min_attendance_required}%).`;
+            }
+
+            const g = document.getElementById('studentMetricsGrid'); g.innerHTML = '';
+            data.subject_wise.forEach(s => { 
+                const cardTheme = s.status === 'Safe' ? 'border-emerald-200 bg-white/70' : 'border-red-200 bg-red-50/40';
+                const pillTheme = s.status === 'Safe' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white';
+                
+                let advisoryString = s.status === 'Warning' ? 
+                    `<p class="text-[11px] font-extrabold text-red-600 mt-2 p-1.5 bg-red-100/60 rounded-lg">🚨 Deficit: Attend next <b>${s.consecutive_required}</b> classes to reach ${data.min_attendance_required}%.</p>` :
+                    `<p class="text-[11px] font-bold text-emerald-700 mt-2 p-1.5 bg-emerald-100/50 rounded-lg">🛡️ Buffer: Safe to skip next <b>${s.safe_skips}</b> classes safely.</p>`;
+
+                g.insertAdjacentHTML('beforeend', `
+                    <div class="glass-card p-5 rounded-2xl border-2 shadow-sm ${cardTheme}">
+                        <div class="flex justify-between items-start mb-2"><span class="font-mono text-xs text-indigo-600 font-bold">[${s.subject_code}]</span><span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${pillTheme}">${s.status}</span></div>
+                        <h4 class="font-black mt-2 text-slate-800 tracking-tight text-base leading-tight">${s.subject_name}</h4>
+                        <div class="mt-4 flex justify-between font-bold border-t pt-2"><span>${s.percentage}%</span><span class="text-xs text-slate-400">${s.attended}/${s.total_classes} Classes</span></div>
+                        ${advisoryString}
+                    </div>`); 
+            });
+
+            const h = document.getElementById('studentHistoryTable'); h.innerHTML = '';
+            data.history.forEach(log => { h.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-4 font-mono text-slate-400">${log.date}</td><td class="p-4 font-mono font-bold text-indigo-600">${log.start_time} - ${log.end_time}</td><td class="p-4"><span class="font-mono bg-slate-50 border text-slate-500 text-[10px] px-1.5 py-0.5 rounded mr-2">${log.subject_code}</span>${log.subject_name}</td><td class="p-4 text-right"><span class="font-black uppercase text-[10px] bg-slate-100 border rounded px-2 py-0.5">${log.status}</span></td></tr>`); });
+        }
+
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            if (!table) return alert('Source table components missing.');
+            let csvRows = [];
+            const rows = table.querySelectorAll("tr");
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                let rowData = [];
+                const cols = row.querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) {
+                    let cellNode = cols[j];
+                    let textContent = cellNode.innerText.trim();
+                    const selectEl = cellNode.querySelector("select");
+                    if (selectEl) { textContent = selectEl.value; }
+                    textContent = textContent.replace(/,/g, ";").replace(/\n/g, " ");
+                    rowData.push('"' + textContent + '"');
+                }
+                csvRows.push(rowData.join(","));
+            }
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const downloadLink = document.createElement("a");
+            downloadLink.setAttribute("href", encodedUri);
+            downloadLink.setAttribute("download", filename);
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        updateFormInterface();
+    </script>
+</body>
+</html>
