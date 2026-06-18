@@ -470,7 +470,11 @@ def get_student_dashboard(student_id):
             consecutive_required = 0
             safe_skips = 0
             
-            if percentage < min_pct:
+            # FIXED: Avoid infinite computing sequence loops when zero historical logs exist
+            if total == 0:
+                consecutive_required = 0
+                safe_skips = 0
+            elif percentage < min_pct:
                 current_total = total
                 current_present = present
                 while (current_present / current_total * 100) < min_pct if current_total > 0 else True:
