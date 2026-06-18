@@ -276,7 +276,6 @@
     </div>
 
     <script>
-        // FIXED: Dynamically references absolute root link parameters securely
         const HOST = window.location.origin;
         let activeSessionUser = null;
 
@@ -327,7 +326,7 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
                 });
-                if(!res.ok) throw new Error();
+                if(!res.ok) throw new Error('Authentication rejected.');
                 activeSessionUser = await res.json();
                 
                 if (activeSessionUser.role !== document.querySelector('input[name="roleRadio"]:checked').value) {
@@ -340,55 +339,76 @@
                 if(activeSessionUser.role === 'coordinator') await loadCoordinatorViewData();
                 if(activeSessionUser.role === 'teacher') await loadTeacherViewData();
                 if(activeSessionUser.role === 'student') await loadStudentViewData();
-            } catch { alert('Authentication credentials rejected.'); }
+            } catch (err) { alert('Authentication credentials rejected.'); }
         }
 
         // --- ROOT SYSTEM ADMIN HANDLERS ---
         async function loadAdminViewData() {
-            const res = await fetch(`${HOST}/api/admin/coordinators`);
-            const coordinators = await res.json();
-            const tbody = document.getElementById('adminCoordinatorTable'); tbody.innerHTML = '';
-            coordinators.forEach(c => { tbody.insertAdjacentHTML('beforeend', `<tr class="border-b"><td class="p-2 font-mono font-bold text-slate-500">${c.username}</td><td>${c.name}</td></tr>`); });
+            try {
+                const res = await fetch(`${HOST}/api/admin/coordinators`);
+                // FIXED: Safety intercept check preventing invalid structure processing if server fails with 500 error
+                if (!res.ok) {
+                    const errData = await res.json();
+                    alert(`Database Configuration Fault: ${errData.details || 'Unable to retrieve coordinators.'}`);
+                    return;
+                }
+                const coordinators = await res.json();
+                const tbody = document.getElementById('adminCoordinatorTable'); tbody.innerHTML = '';
+                coordinators.forEach(c => { tbody.insertAdjacentHTML('beforeend', `<tr class="border-b"><td class="p-2 font-mono font-bold text-slate-500">${c.username}</td><td>${c.name}</td></tr>`); });
+            } catch (e) { console.error(e); }
         }
         async function addCoordinator() {
-            await fetch(`${HOST}/api/admin/coordinators`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('coordUsername').value.trim(), name: document.getElementById('coordName').value, password: document.getElementById('coordPassword').value, admin_id: activeSessionUser.id}) });
-            document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; await loadAdminViewData();
+            try {
+                const res = await fetch(`${HOST}/api/admin/coordinators`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('coordUsername').value.trim(), name: document.getElementById('coordName').value, password: document.getElementById('coordPassword').value, admin_id: activeSessionUser.id}) });
+                if (!res.ok) {
+                    const errData = await res.json();
+                    alert(`Deployment Rejected: ${errData.error || errData.details}`);
+                    return;
+                }
+                document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; await loadAdminViewData();
+            } catch (e) { alert('Failed to connect to database transaction endpoint.'); }
         }
 
         // --- COORDINATOR CONTROL LAYER METHODS ---
         async function loadCoordinatorViewData() {
-            const resCrit = await fetch(`${HOST}/api/admin/criteria`);
-            const minCriteria = (await resCrit.json()).min_attendance;
-            document.getElementById('minCriteriaInput').value = minCriteria;
-
-            const resUsers = await fetch(`${HOST}/api/coordinator/users?coordinator_id=${activeSessionUser.id}`);
-            const users = await resUsers.json();
-            
-            const teacherTable = document.getElementById('coordTeacherTable');
-            const studentTable = document.getElementById('coordStudentTable');
-            teacherTable.innerHTML = ''; studentTable.innerHTML = '';
-
-            users.forEach(u => {
-                const actionControls = `
-                    <td class="p-2 text-right space-x-1">
-                        <button onclick="openEditModal(${u.id}, '${u.name}')" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border text-[10px] font-bold">Edit</button>
-                        <button onclick="deleteUser(${u.id})" class="text-red-600 bg-red-50 px-2 py-0.5 rounded border text-[10px] font-bold">Remove</button>
-                    </td>`;
-
-                if(u.role === 'teacher') {
-                    teacherTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold text-indigo-700">${u.username}</td><td class="p-2 font-medium">${u.name}</td>${actionControls}</tr>`);
-                } else {
-                    studentTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold">${u.username}</td><td class="p-2 font-medium">${u.name} <span class="text-[10px] text-slate-400 font-mono">[${u.section_name || 'N/A'}]</span></td>${actionControls}</tr>`);
+            try {
+                const resCrit = await fetch(`${HOST}/api/admin/criteria`);
+                if(resCrit.ok) {
+                    const minCriteria = (await resCrit.json()).min_attendance;
+                    document.getElementById('minCriteriaInput').value = minCriteria;
+                    await loadCoordinatorGlobalReports(minCriteria);
                 }
-            });
 
-            await loadSubjectsRegistryView();
-            await loadTimetableRegistryView();
-            await loadCoordinatorGlobalReports(minCriteria);
+                const resUsers = await fetch(`${HOST}/api/coordinator/users?coordinator_id=${activeSessionUser.id}`);
+                if (!resUsers.ok) return;
+                const users = await resUsers.json();
+                
+                const teacherTable = document.getElementById('coordTeacherTable');
+                const studentTable = document.getElementById('coordStudentTable');
+                teacherTable.innerHTML = ''; studentTable.innerHTML = '';
+
+                users.forEach(u => {
+                    const actionControls = `
+                        <td class="p-2 text-right space-x-1">
+                            <button onclick="openEditModal(${u.id}, '${u.name}')" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border text-[10px] font-bold">Edit</button>
+                            <button onclick="deleteUser(${u.id})" class="text-red-600 bg-red-50 px-2 py-0.5 rounded border text-[10px] font-bold">Remove</button>
+                        </td>`;
+
+                    if(u.role === 'teacher') {
+                        teacherTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold text-indigo-700">${u.username}</td><td class="p-2 font-medium">${u.name}</td>${actionControls}</tr>`);
+                    } else {
+                        studentTable.insertAdjacentHTML('beforeend', `<tr class="border-b hover:bg-white/40 transition"><td class="p-2 font-mono font-bold">${u.username}</td><td class="p-2 font-medium">${u.name} <span class="text-[10px] text-slate-400 font-mono">[${u.section_name || 'N/A'}]</span></td>${actionControls}</tr>`);
+                    }
+                });
+
+                await loadSubjectsRegistryView();
+                await loadTimetableRegistryView();
+            } catch (e) { console.error(e); }
         }
 
         async function loadSubjectsRegistryView() {
             const res = await fetch(`${HOST}/api/coordinator/subjects`);
+            if(!res.ok) return;
             const subjects = await res.json();
             const tbody = document.getElementById('coordSubjectsRegistryTable'); tbody.innerHTML = '';
             subjects.forEach(s => {
@@ -398,13 +418,13 @@
                         <td class="p-2.5 font-medium">${s.subject_name}</td>
                         <td class="p-2.5 font-semibold text-slate-500">${s.teacher_name ? `${s.teacher_name} (${s.teacher_uid})` : '⚠️ Unassigned'}</td>
                         <td class="p-2.5 text-center"><button onclick="removeSubjectNode(${s.id})" class="text-red-600 bg-rose-50 border border-red-200 px-2 py-0.5 rounded text-xs font-black">Remove</button></td>
-                    </td>`);
+                    </tr>`);
             });
             if(!subjects.length) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No courses added into database view directory yet.</td></tr>';
         }
         async function removeSubjectNode(id) {
             if(confirm("Confirm security parameter execution: Delete subject instance?")) {
-                await fetch(`${HOST}/api/coordinator/subjects/${id}`, { method: 'DELETE' }); await loadSubjectsRegistryView();
+                const res = await fetch(`${HOST}/api/coordinator/subjects/${id}`, { method: 'DELETE' }); if(res.ok) await loadSubjectsRegistryView();
             }
         }
 
@@ -415,6 +435,7 @@
 
         async function loadTimetableRegistryView() {
             const res = await fetch(`${HOST}/api/coordinator/schedules`);
+            if(!res.ok) return;
             const schedules = await res.json();
             const tbody = document.getElementById('coordTimetableRegistryTable'); tbody.innerHTML = '';
             schedules.forEach(s => {
@@ -425,7 +446,7 @@
                         <td class="p-2.5 font-medium">${s.subject_name} <span class="text-xs text-indigo-500 font-mono font-bold">[${s.section_name || 'N/A'}]</span></td>
                         <td class="p-2.5 font-mono font-bold text-slate-600">${s.start_time} - ${s.end_time}</td>
                         <td class="p-2.5 text-center"><button onclick="removeScheduleSlot(${s.id})" class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-xl">Delete</button></td>
-                    </td>`);
+                    </tr>`);
             });
             if(!schedules.length) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No schedules mapped into master registry matrix.</td></tr>';
         }
@@ -435,12 +456,13 @@
         }
         async function removeScheduleSlot(schId) {
             if(confirm("Confirm permanently dropping this lecture slot?")) {
-                await fetch(`${HOST}/api/coordinator/schedules/${schId}`, { method: 'DELETE' }); await loadTimetableRegistryView();
+                const res = await fetch(`${HOST}/api/coordinator/schedules/${schId}`, { method: 'DELETE' }); if(res.ok) await loadTimetableRegistryView();
             }
         }
 
         async function loadCoordinatorGlobalReports(minCriteria) {
             const res = await fetch(`${HOST}/api/coordinator/attendance-report?coordinator_id=${activeSessionUser.id}`);
+            if(!res.ok) return;
             const report = await res.json();
             const tbody = document.getElementById('coordinatorGlobalReportTbody'); 
             tbody.innerHTML = '';
@@ -466,20 +488,21 @@
         function openEditModal(id, name) { document.getElementById('editUserId').value = id; document.getElementById('editUserNameInput').value = name; document.getElementById('editUserPasswordInput').value = ''; document.getElementById('editModal').classList.remove('hidden'); }
         function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
         async function submitUserEdits() {
-            await fetch(`${HOST}/api/admin/users/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: document.getElementById('editUserId').value, name: document.getElementById('editUserNameInput').value, password: document.getElementById('editUserPasswordInput').value}) });
-            closeEditModal(); await loadCoordinatorViewData();
+            const res = await fetch(`${HOST}/api/admin/users/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: document.getElementById('editUserId').value, name: document.getElementById('editUserNameInput').value, password: document.getElementById('editUserPasswordInput').value}) });
+            if(res.ok) { closeEditModal(); await loadCoordinatorViewData(); }
         }
         async function addProvisionedUser() {
-            await fetch(`${HOST}/api/coordinator/users`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('regUsername').value, password: document.getElementById('regPassword').value, name: document.getElementById('regName').value, role: document.getElementById('regRole').value, section_name: document.getElementById('regSection').value, coordinator_id: activeSessionUser.id}) });
-            document.getElementById('regUsername').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regSection').value = ''; await loadCoordinatorViewData();
+            const res = await fetch(`${HOST}/api/coordinator/users`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('regUsername').value, password: document.getElementById('regPassword').value, name: document.getElementById('regName').value, role: document.getElementById('regRole').value, section_name: document.getElementById('regSection').value, coordinator_id: activeSessionUser.id}) });
+            if(res.ok) { document.getElementById('regUsername').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regSection').value = ''; await loadCoordinatorViewData(); }
         }
-        async function deleteUser(id) { if(confirm("Archive this profile timeline record?")) { await fetch(`${HOST}/api/admin/users/${id}`, { method: 'DELETE' }); await loadCoordinatorViewData(); } }
-        async function updateCriteria() { await fetch(`${HOST}/api/admin/criteria`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({min_attendance: document.getElementById('minCriteriaInput').value}) }); await loadCoordinatorViewData(); }
+        async function deleteUser(id) { if(confirm("Archive this profile timeline record?")) { const res = await fetch(`${HOST}/api/admin/users/${id}`, { method: 'DELETE' }); if(res.ok) await loadCoordinatorViewData(); } }
+        async function updateCriteria() { const res = await fetch(`${HOST}/api/admin/criteria`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({min_attendance: document.getElementById('minCriteriaInput').value}) }); if(res.ok) await loadCoordinatorViewData(); }
 
         let teacherLoadedSchedulesCache = [];
         async function loadTeacherViewData() {
             document.getElementById('attendanceDate').valueAsDate = new Date();
             const res = await fetch(`${HOST}/api/teacher/classes/${activeSessionUser.id}`);
+            if(!res.ok) return;
             const classes = await res.json();
             const classSelect = document.getElementById('teacherClassSelect');
             
@@ -498,6 +521,7 @@
             if(!sectionId) { schSelect.innerHTML = '<option value="">-- Choose Class Section First --</option>'; schSelect.disabled = true; return; }
 
             const res = await fetch(`${HOST}/api/teacher/schedules-by-class?teacher_id=${activeSessionUser.id}&section_id=${sectionId}`);
+            if(!res.ok) return;
             teacherLoadedSchedulesCache = await res.json();
             
             schSelect.innerHTML = '<option value="">-- Select Scheduled Slot --</option>';
@@ -514,11 +538,14 @@
             if(!sectionId || !schId || !date) return;
 
             const slot = teacherLoadedSchedulesCache.find(s => s.schedule_id == schId);
+            if(!slot) return;
             
             const resPast = await fetch(`${HOST}/api/teacher/fetch-past-attendance?subject_id=${slot.subject_id}&date=${date}&start_time=${slot.start_time}`);
+            if(!resPast.ok) return;
             const pastRecords = await resPast.json();
 
             const resRoster = await fetch(`${HOST}/api/teacher/students-by-section/${sectionId}`);
+            if(!resRoster.ok) return;
             const students = await resRoster.json();
             
             const tbody = document.getElementById('teacherRosterTable'); tbody.innerHTML = '';
@@ -562,16 +589,17 @@
                 records.push({ student_id: parseInt(row.getAttribute('data-sid')), status: row.querySelector('.status-select').value });
             });
 
-            await fetch(`${HOST}/api/teacher/attendance`, {
+            const res = await fetch(`${HOST}/api/teacher/attendance`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({subject_id: slot.subject_id, date: document.getElementById('attendanceDate').value, start_time: slot.start_time, end_time: slot.end_time, records})
             });
-            alert('Attendance batch successfully saved.'); await checkAndLoadPastAttendance();
+            if(res.ok) { alert('Attendance batch successfully saved.'); await checkAndLoadPastAttendance(); }
         }
 
         async function loadStudentViewData() {
             const res = await fetch(`${HOST}/api/student/dashboard/${activeSessionUser.id}`);
+            if(!res.ok) return;
             const data = await res.json();
             const alertBox = document.getElementById('criteriaAlertContainer');
             
