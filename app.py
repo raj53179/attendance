@@ -447,6 +447,7 @@ def submit_attendance():
 
 
 # --- STUDENT PORTAL SERVICES ---
+# --- STUDENT PORTAL SERVICES ---
 @app.route('/api/student/dashboard/<int:student_id>', methods=['GET'])
 def get_student_dashboard(student_id):
     conn = get_db_connection()
@@ -472,21 +473,21 @@ def get_student_dashboard(student_id):
             consecutive_required = 0
             safe_skips = 0
             
-            # FIXED: Avoid infinite computing sequence loops when zero historical logs exist
+            # FIXED: Bulletproof conditional layout preventing any infinite loop states
             if total == 0:
                 consecutive_required = 0
                 safe_skips = 0
             elif percentage < min_pct:
                 current_total = total
                 current_present = present
-                while (current_present / current_total * 100) < min_pct if current_total > 0 else True:
+                while current_total > 0 and (current_present / current_total * 100) < min_pct:
                     consecutive_required += 1
                     current_total += 1
                     current_present += 1
             else:
                 current_total = total
                 current_present = present
-                while True:
+                while current_total >= 0:
                     next_total = current_total + 1
                     if (current_present / next_total * 100) >= min_pct:
                         safe_skips += 1
