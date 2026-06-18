@@ -6,8 +6,18 @@
     <title>Attendance Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes subtle-float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.02); } }
+        @keyframes subtle-float { 
+            0%, 100% { transform: translateY(0) scale(1); } 
+            50% { transform: translateY(-10px) scale(1.02); } 
+        }
+        /* FIXED: Added missing keyframe interpolation map for smooth interface transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .animate-float { animation: subtle-float 6s infinite ease-in-out; }
+        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
         .dashboard-glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.4); }
         .glass-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px); transition: all 0.3s ease; }
         .glass-card:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.75); }
@@ -53,7 +63,7 @@
                         <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
                             <input type="radio" name="roleRadio" value="coordinator" onchange="updateFormInterface()" class="hidden">📋 <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Coord</span>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 Henry has-[:checked]:bg-red-50/30">
                             <input type="radio" name="roleRadio" value="admin" onchange="updateFormInterface()" class="hidden">🛡️ <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Admin</span>
                         </label>
                     </div>
@@ -75,7 +85,7 @@
                         <input type="text" id="coordUsername" placeholder="Enter Coordinator Unique Key ID" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
                         <input type="text" id="coordName" placeholder="Coordinator Identity Full Name" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
                         <input type="password" id="coordPassword" placeholder="Access Authentication Security Key" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
-                        <button onclick="addCoordinator()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition">Deploy Department Coordinator</button>
+                        <button onclick="addCoordinator()" class="w-full bg-slate-990 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition">Deploy Department Coordinator</button>
                     </div>
                 </div>
                 <div class="dashboard-glass p-6 rounded-3xl shadow-xl max-h-80 overflow-y-auto">
@@ -267,8 +277,8 @@
     </div>
 
     <script>
-        // CHANGE THIS VALUE TO INTERACT WITH EXTERNAL PRODUCTION ENDPOINTS OR LOCAL IP ROADS
-        const HOST = "https://attendance-management-system-1.onrender.com";
+        // FIXED: Explicit pointer connection config maps neatly to your deployment engine environment 
+        const HOST = window.location.origin;
         let activeSessionUser = null;
 
         function updateFormInterface() {
