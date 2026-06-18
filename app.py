@@ -142,7 +142,7 @@ def coordinator_manage_users():
         users = cursor.fetchall()
         return jsonify(rows_to_list(users))
     finally:
-        coordinator_close = cursor.close()
+        cursor.close()
         conn.close()
 
 
