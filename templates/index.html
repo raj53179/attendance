@@ -10,7 +10,6 @@
             0%, 100% { transform: translateY(0) scale(1); } 
             50% { transform: translateY(-10px) scale(1.02); } 
         }
-        /* FIXED: Added missing keyframe interpolation map for smooth interface transitions */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -63,7 +62,7 @@
                         <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
                             <input type="radio" name="roleRadio" value="coordinator" onchange="updateFormInterface()" class="hidden">📋 <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Coord</span>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 Henry has-[:checked]:bg-red-50/30">
+                        <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 cursor-pointer transition bg-slate-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50/30">
                             <input type="radio" name="roleRadio" value="admin" onchange="updateFormInterface()" class="hidden">🛡️ <span class="font-bold text-slate-600 mt-1" style="font-size: 10px;">Admin</span>
                         </label>
                     </div>
@@ -85,7 +84,7 @@
                         <input type="text" id="coordUsername" placeholder="Enter Coordinator Unique Key ID" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
                         <input type="text" id="coordName" placeholder="Coordinator Identity Full Name" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
                         <input type="password" id="coordPassword" placeholder="Access Authentication Security Key" class="w-full border p-3 text-sm rounded-xl bg-white focus:outline-none">
-                        <button onclick="addCoordinator()" class="w-full bg-slate-990 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition">Deploy Department Coordinator</button>
+                        <button onclick="addCoordinator()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-bold transition">Deploy Department Coordinator</button>
                     </div>
                 </div>
                 <div class="dashboard-glass p-6 rounded-3xl shadow-xl max-h-80 overflow-y-auto">
@@ -277,7 +276,7 @@
     </div>
 
     <script>
-        // FIXED: Explicit pointer connection config maps neatly to your deployment engine environment 
+        // FIXED: Dynamically references absolute root link parameters securely
         const HOST = window.location.origin;
         let activeSessionUser = null;
 
@@ -337,10 +336,10 @@
                 document.getElementById('userProfileBadge').innerText = `${activeSessionUser.name} [${activeSessionUser.username}]`;
                 showModuleView(activeSessionUser.role);
                 
-                if(activeSessionUser.role === 'admin') loadAdminViewData();
-                if(activeSessionUser.role === 'coordinator') loadCoordinatorViewData();
-                if(activeSessionUser.role === 'teacher') loadTeacherViewData();
-                if(activeSessionUser.role === 'student') loadStudentViewData();
+                if(activeSessionUser.role === 'admin') await loadAdminViewData();
+                if(activeSessionUser.role === 'coordinator') await loadCoordinatorViewData();
+                if(activeSessionUser.role === 'teacher') await loadTeacherViewData();
+                if(activeSessionUser.role === 'student') await loadStudentViewData();
             } catch { alert('Authentication credentials rejected.'); }
         }
 
@@ -353,7 +352,7 @@
         }
         async function addCoordinator() {
             await fetch(`${HOST}/api/admin/coordinators`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('coordUsername').value.trim(), name: document.getElementById('coordName').value, password: document.getElementById('coordPassword').value, admin_id: activeSessionUser.id}) });
-            document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; loadAdminViewData();
+            document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; await loadAdminViewData();
         }
 
         // --- COORDINATOR CONTROL LAYER METHODS ---
@@ -383,9 +382,9 @@
                 }
             });
 
-            loadSubjectsRegistryView();
-            loadTimetableRegistryView();
-            loadCoordinatorGlobalReports(minCriteria);
+            await loadSubjectsRegistryView();
+            await loadTimetableRegistryView();
+            await loadCoordinatorGlobalReports(minCriteria);
         }
 
         async function loadSubjectsRegistryView() {
@@ -399,19 +398,19 @@
                         <td class="p-2.5 font-medium">${s.subject_name}</td>
                         <td class="p-2.5 font-semibold text-slate-500">${s.teacher_name ? `${s.teacher_name} (${s.teacher_uid})` : '⚠️ Unassigned'}</td>
                         <td class="p-2.5 text-center"><button onclick="removeSubjectNode(${s.id})" class="text-red-600 bg-rose-50 border border-red-200 px-2 py-0.5 rounded text-xs font-black">Remove</button></td>
-                    </tr>`);
+                    </td>`);
             });
             if(!subjects.length) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No courses added into database view directory yet.</td></tr>';
         }
         async function removeSubjectNode(id) {
             if(confirm("Confirm security parameter execution: Delete subject instance?")) {
-                await fetch(`${HOST}/api/coordinator/subjects/${id}`, { method: 'DELETE' }); loadSubjectsRegistryView();
+                await fetch(`${HOST}/api/coordinator/subjects/${id}`, { method: 'DELETE' }); await loadSubjectsRegistryView();
             }
         }
 
         async function addSubject() {
             const res = await fetch(`${HOST}/api/coordinator/subjects`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({subject_code: document.getElementById('subCode').value, subject_name: document.getElementById('subName').value, teacher_id: document.getElementById('subTeacherId').value}) });
-            if(res.ok) { document.getElementById('subCode').value = ''; document.getElementById('subName').value = ''; document.getElementById('subTeacherId').value = ''; loadSubjectsRegistryView(); } else { alert((await res.json()).error); }
+            if(res.ok) { document.getElementById('subCode').value = ''; document.getElementById('subName').value = ''; document.getElementById('subTeacherId').value = ''; await loadSubjectsRegistryView(); } else { alert((await res.json()).error); }
         }
 
         async function loadTimetableRegistryView() {
@@ -426,17 +425,17 @@
                         <td class="p-2.5 font-medium">${s.subject_name} <span class="text-xs text-indigo-500 font-mono font-bold">[${s.section_name || 'N/A'}]</span></td>
                         <td class="p-2.5 font-mono font-bold text-slate-600">${s.start_time} - ${s.end_time}</td>
                         <td class="p-2.5 text-center"><button onclick="removeScheduleSlot(${s.id})" class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-xl">Delete</button></td>
-                    </tr>`);
+                    </td>`);
             });
             if(!schedules.length) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No schedules mapped into master registry matrix.</td></tr>';
         }
         async function commitScheduleMapping() {
             const res = await fetch(`${HOST}/api/coordinator/schedules`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({subject_code: document.getElementById('schSubCode').value, day_of_week: document.getElementById('schDay').value, start_time: document.getElementById('schStart').value, end_time: document.getElementById('schEnd').value}) });
-            if(res.ok) { document.getElementById('schSubCode').value = ''; loadTimetableRegistryView(); } else { alert((await res.json()).error); }
+            if(res.ok) { document.getElementById('schSubCode').value = ''; await loadTimetableRegistryView(); } else { alert((await res.json()).error); }
         }
         async function removeScheduleSlot(schId) {
             if(confirm("Confirm permanently dropping this lecture slot?")) {
-                await fetch(`${HOST}/api/coordinator/schedules/${schId}`, { method: 'DELETE' }); loadTimetableRegistryView();
+                await fetch(`${HOST}/api/coordinator/schedules/${schId}`, { method: 'DELETE' }); await loadTimetableRegistryView();
             }
         }
 
@@ -468,14 +467,14 @@
         function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
         async function submitUserEdits() {
             await fetch(`${HOST}/api/admin/users/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: document.getElementById('editUserId').value, name: document.getElementById('editUserNameInput').value, password: document.getElementById('editUserPasswordInput').value}) });
-            closeEditModal(); loadCoordinatorViewData();
+            closeEditModal(); await loadCoordinatorViewData();
         }
         async function addProvisionedUser() {
             await fetch(`${HOST}/api/coordinator/users`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('regUsername').value, password: document.getElementById('regPassword').value, name: document.getElementById('regName').value, role: document.getElementById('regRole').value, section_name: document.getElementById('regSection').value, coordinator_id: activeSessionUser.id}) });
-            document.getElementById('regUsername').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regSection').value = ''; loadCoordinatorViewData();
+            document.getElementById('regUsername').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPassword').value = ''; document.getElementById('regSection').value = ''; await loadCoordinatorViewData();
         }
-        async function deleteUser(id) { if(confirm("Archive this profile timeline record?")) { await fetch(`${HOST}/api/admin/users/${id}`, { method: 'DELETE' }); loadCoordinatorViewData(); } }
-        async function updateCriteria() { await fetch(`${HOST}/api/admin/criteria`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({min_attendance: document.getElementById('minCriteriaInput').value}) }); loadCoordinatorViewData(); }
+        async function deleteUser(id) { if(confirm("Archive this profile timeline record?")) { await fetch(`${HOST}/api/admin/users/${id}`, { method: 'DELETE' }); await loadCoordinatorViewData(); } }
+        async function updateCriteria() { await fetch(`${HOST}/api/admin/criteria`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({min_attendance: document.getElementById('minCriteriaInput').value}) }); await loadCoordinatorViewData(); }
 
         let teacherLoadedSchedulesCache = [];
         async function loadTeacherViewData() {
@@ -568,7 +567,7 @@
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({subject_id: slot.subject_id, date: document.getElementById('attendanceDate').value, start_time: slot.start_time, end_time: slot.end_time, records})
             });
-            alert('Attendance batch successfully saved.'); checkAndLoadPastAttendance();
+            alert('Attendance batch successfully saved.'); await checkAndLoadPastAttendance();
         }
 
         async function loadStudentViewData() {
