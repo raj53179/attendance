@@ -84,7 +84,8 @@ def manage_coordinators():
     try:
         if request.method == 'POST':
             data = request.get_json() or {}
-            hashed_password = generate_password_hash(data['password'], method='scrypt')
+            # FIXED: Removed the deprecated method='scrypt' parameter to prevent Werkzeug fatal crash
+            hashed_password = generate_password_hash(data['password'])
             cursor.execute("""
                 INSERT INTO users (username, password, name, role, created_by, is_deleted) 
                 VALUES (%s, %s, %s, 'coordinator', %s, 0)
@@ -111,7 +112,8 @@ def coordinator_manage_users():
     try:
         if request.method == 'POST':
             data = request.get_json() or {}
-            hashed_password = generate_password_hash(data['password'], method='scrypt')
+            # FIXED: Removed the deprecated method='scrypt' parameter to allow safe user provisioning
+            hashed_password = generate_password_hash(data['password'])
             if data['role'] not in ['teacher', 'student']:
                 return jsonify({'error': 'Unauthorized role layout configuration.'}), 403
                 
@@ -140,7 +142,7 @@ def coordinator_manage_users():
         users = cursor.fetchall()
         return jsonify(rows_to_list(users))
     finally:
-        cursor.close()
+        coordinator_close = cursor.close()
         conn.close()
 
 
@@ -304,8 +306,8 @@ def edit_user():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        hashed_password = generate_password_hash(data['password'], method='scrypt')
-        # FIXED: Changed SQLite '?' formatting to PostgreSQL '%s' values
+        # FIXED: Removed deprecated method parameter here too so user profile resets work seamlessly
+        hashed_password = generate_password_hash(data['password'])
         cursor.execute(
             "UPDATE users SET name = %s, password = %s WHERE id = %s", 
             (data['name'].strip(), hashed_password, data['id'])
