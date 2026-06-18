@@ -85,12 +85,15 @@ def manage_coordinators():
     try:
         if request.method == 'POST':
             data = request.get_json() or {}
-            # FIXED: Removed deprecated password hashing method parameters to avoid server crash
             hashed_password = generate_password_hash(data['password'])
+            
+            # FIXED: Fallback safety parameter mapping
+            creator_id = data.get('admin_id') if data.get('admin_id') else 1
+            
             cursor.execute("""
                 INSERT INTO users (username, password, name, role, created_by, is_deleted) 
                 VALUES (%s, %s, %s, 'coordinator', %s, 0)
-            """, (data['username'], hashed_password, data['name'], data.get('admin_id')))
+            """, (data['username'].strip(), hashed_password, data['name'].strip(), creator_id))
             conn.commit()
             return jsonify({'message': 'Coordinator deployment successful.'}), 201
             
@@ -142,7 +145,6 @@ def coordinator_manage_users():
         users = cursor.fetchall()
         return jsonify(rows_to_list(users))
     finally:
-        # FIXED: Resolved invalid cleanup assignment syntax error
         cursor.close()
         conn.close()
 
