@@ -45,13 +45,12 @@ def login():
     if username == "admin":
         if password == "admin123":  # <-- Hardcoded Admin Credentials
             return jsonify({
-                "status": "success", # Kept for explicit frontend checks if needed
+                "status": "success",
                 "role": "admin",
                 "username": "admin",
                 "name": "System Administrator"
             }), 200
         else:
-            # Fixed key name to 'error' to match database response syntax
             return jsonify({"error": "Invalid Admin Password"}), 401
 
     # 2. DATABASE USER CHECK (Teachers / Students / HODs)
@@ -70,7 +69,7 @@ def login():
                 'username': user['username'], 
                 'name': user['name'], 
                 'role': user['role']
-            }), 200 # Explicit status code reinforcement
+            }), 200
             
         return jsonify({'error': 'Invalid credentials'}), 401
     finally: 
@@ -306,7 +305,11 @@ def edit_user():
     cursor = conn.cursor()
     try:
         hashed_password = generate_password_hash(data['password'], method='scrypt')
-        cursor.execute("UPDATE users SET name = ?, password = ? WHERE id = ?", (data['name'].strip(), hashed_password, data['id']))
+        # FIXED: Changed SQLite '?' formatting to PostgreSQL '%s' values
+        cursor.execute(
+            "UPDATE users SET name = %s, password = %s WHERE id = %s", 
+            (data['name'].strip(), hashed_password, data['id'])
+        )
         conn.commit()
         return jsonify({'message': 'User configuration modified'})
     finally: 
