@@ -359,13 +359,26 @@
         }
         async function addCoordinator() {
             try {
-                const res = await fetch(`${HOST}/api/admin/coordinators`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('coordUsername').value.trim(), name: document.getElementById('coordName').value, password: document.getElementById('coordPassword').value, admin_id: activeSessionUser.id}) });
+                const res = await fetch(`${HOST}/api/admin/coordinators`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify({
+                        username: document.getElementById('coordUsername').value.trim(), 
+                        name: document.getElementById('coordName').value, 
+                        password: document.getElementById('coordPassword').value, 
+                        admin_id: activeSessionUser.id
+                    }) 
+                });
                 if (!res.ok) {
                     const errData = await res.json();
-                    alert(`Deployment Rejected: ${errData.error || errData.details}`);
+                    // FIXED: Displaying both the error title AND the raw system details
+                    alert(`Deployment Rejected: ${errData.error}\nDetails: ${errData.details || 'Check logs'}`);
                     return;
                 }
-                document.getElementById('coordUsername').value = ''; document.getElementById('coordName').value = ''; document.getElementById('coordPassword').value = ''; await loadAdminViewData();
+                document.getElementById('coordUsername').value = ''; 
+                document.getElementById('coordName').value = ''; 
+                document.getElementById('coordPassword').value = ''; 
+                await loadAdminViewData();
             } catch (e) { alert('Failed to connect to database transaction endpoint.'); }
         }
 
