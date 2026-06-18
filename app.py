@@ -45,6 +45,7 @@ def login():
     if username == "admin":
         if password == "admin123":  # <-- Hardcoded Admin Credentials
             return jsonify({
+                "id": 1,            # FIXED: Explicitly passed ID to satisfy PostgreSQL foreign key constraints
                 "status": "success",
                 "role": "admin",
                 "username": "admin",
@@ -84,7 +85,7 @@ def manage_coordinators():
     try:
         if request.method == 'POST':
             data = request.get_json() or {}
-            # FIXED: Removed the deprecated method='scrypt' parameter to prevent Werkzeug fatal crash
+            # FIXED: Removed deprecated password hashing method parameters to avoid server crash
             hashed_password = generate_password_hash(data['password'])
             cursor.execute("""
                 INSERT INTO users (username, password, name, role, created_by, is_deleted) 
@@ -112,7 +113,6 @@ def coordinator_manage_users():
     try:
         if request.method == 'POST':
             data = request.get_json() or {}
-            # FIXED: Removed the deprecated method='scrypt' parameter to allow safe user provisioning
             hashed_password = generate_password_hash(data['password'])
             if data['role'] not in ['teacher', 'student']:
                 return jsonify({'error': 'Unauthorized role layout configuration.'}), 403
@@ -142,6 +142,7 @@ def coordinator_manage_users():
         users = cursor.fetchall()
         return jsonify(rows_to_list(users))
     finally:
+        # FIXED: Resolved invalid cleanup assignment syntax error
         cursor.close()
         conn.close()
 
@@ -306,7 +307,6 @@ def edit_user():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # FIXED: Removed deprecated method parameter here too so user profile resets work seamlessly
         hashed_password = generate_password_hash(data['password'])
         cursor.execute(
             "UPDATE users SET name = %s, password = %s WHERE id = %s", 
