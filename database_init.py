@@ -79,16 +79,16 @@ def init_db():
         )
     ''')
     
-    # 6. CONFIGURATIONS
+    # 6. CONFIGURATIONS (Wrapped 'key' in quotes to bypass Postgres keyword protection)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS configurations (
-            key TEXT PRIMARY KEY,
+            "key" TEXT PRIMARY KEY,
             value TEXT NOT NULL
         )
     ''')
     
     # Defaults and Root Seeding
-    cursor.execute("INSERT INTO configurations (key, value) VALUES ('min_attendance', '75') ON CONFLICT (key) DO NOTHING;")
+    cursor.execute('INSERT INTO configurations ("key", value) VALUES (\'min_attendance\', \'75\') ON CONFLICT ("key") DO NOTHING;')
     
     hashed_admin_password = generate_password_hash("admin123", method="scrypt")
     cursor.execute("""
