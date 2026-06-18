@@ -10,16 +10,23 @@ def init_db():
         return
 
     print("Connecting to cloud relational database engine...")
-    
-    # Context managers guarantee connections close safely even if table seeding throws an exception
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cursor:
-                print("Deploying Relational Schema Matrices...")
+                print("Purging stale tables to clear schema conflicts...")
+                # Dropping tables in reverse order of foreign keys to avoid dependency blocks
+                cursor.execute("DROP TABLE IF EXISTS configurations CASCADE;")
+                cursor.execute("DROP TABLE IF EXISTS attendance CASCADE;")
+                cursor.execute("DROP TABLE IF EXISTS schedules CASCADE;")
+                cursor.execute("DROP TABLE IF EXISTS subjects CASCADE;")
+                cursor.execute("DROP TABLE IF EXISTS users CASCADE;")
+                cursor.execute("DROP TABLE IF EXISTS sections CASCADE;")
+                
+                print("Deploying Fresh Relational Schema Matrices...")
 
                 # 1. SECTIONS
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS sections (
+                    CREATE TABLE sections (
                         id SERIAL PRIMARY KEY,
                         section_name TEXT UNIQUE NOT NULL
                     )
@@ -27,7 +34,7 @@ def init_db():
 
                 # 2. USERS
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS users (
+                    CREATE TABLE users (
                         id SERIAL PRIMARY KEY,
                         username TEXT UNIQUE NOT NULL, 
                         password TEXT NOT NULL,
@@ -43,7 +50,7 @@ def init_db():
                 
                 # 3. SUBJECTS
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS subjects (
+                    CREATE TABLE subjects (
                         id SERIAL PRIMARY KEY,
                         subject_code TEXT UNIQUE NOT NULL,
                         subject_name TEXT NOT NULL,
@@ -54,7 +61,7 @@ def init_db():
                 
                 # 4. SCHEDULES
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS schedules (
+                    CREATE TABLE schedules (
                         id SERIAL PRIMARY KEY,
                         subject_id INTEGER,
                         section_id INTEGER,
@@ -68,7 +75,7 @@ def init_db():
                 
                 # 5. ATTENDANCE
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS attendance (
+                    CREATE TABLE attendance (
                         id SERIAL PRIMARY KEY,
                         student_id INTEGER NOT NULL,
                         subject_id INTEGER NOT NULL,
@@ -83,27 +90,25 @@ def init_db():
                 
                 # 6. CONFIGURATIONS
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS configurations (
+                    CREATE TABLE configurations (
                         "key" TEXT PRIMARY KEY,
                         value TEXT NOT NULL
                     )
                 ''')
                 
-                # Seeding Default Application Thresholds
-                cursor.execute('INSERT INTO configurations ("key", value) VALUES (\'min_attendance\', \'75\') ON CONFLICT ("key") DO NOTHING;')
+                # Seed system values
+                cursor.execute('INSERT INTO configurations ("key", value) VALUES (\'min_attendance\', \'75\');')
                 
-                # FIXED: Standardized to 'scrypt' explicitly to match incoming app.py login requests
                 hashed_admin_password = generate_password_hash("admin123", method="scrypt")
                 cursor.execute("""
                     INSERT INTO users (username, password, name, role, is_deleted) 
-                    VALUES ('admin', %s, 'Root System Administrator', 'admin', 0)
-                    ON CONFLICT (username) DO NOTHING;
+                    VALUES ('admin', %s, 'Root System Administrator', 'admin', 0);
                 """, (hashed_admin_password,))
                 
                 conn.commit()
-                print("Database initialization step completed successfully.")
+                print("Database tables built and seeded perfectly.")
     except Exception as e:
-        print(f"Critical Error during initialization execution phase: {str(e)}")
+        print(f"Critical Error during initialization: {str(e)}")
 
 if __name__ == '__main__':
     init_db()
